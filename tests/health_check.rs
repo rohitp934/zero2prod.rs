@@ -20,5 +20,5 @@ async fn health_check_test() {
 
 fn spawn_app() {
     let server = zero2prod::run().expect("failed to bind address");
-    let _ = tokio::spawn(server);
+    tokio::spawn(server);
 }
