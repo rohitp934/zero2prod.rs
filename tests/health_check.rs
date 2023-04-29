@@ -3,13 +3,13 @@
 #[tokio::test]
 async fn health_check_test() {
     // Arrange
-    spawn_app();
 
+    let url = spawn_app();
     // Using reqwest to make HTTP requests to our application.
     let client = reqwest::Client::new();
 
     let response = client
-        .get("http://localhost:8000/health_check")
+        .get(format!("{}/health_check", &url))
         .send()
         .await
         .expect("failed to execute request.");
@@ -18,7 +18,10 @@ async fn health_check_test() {
     assert_eq!(Some(0), response.content_length());
 }
 
-fn spawn_app() {
-    let server = zero2prod::run("127.0.0.1:0").expect("failed to bind address");
+fn spawn_app() -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("failed to bind random port");
+    let port = listener.local_addr().expect("failed to get port").port();
+    let server = zero2prod::run(listener).expect("failed to bind address");
     tokio::spawn(server);
+    format!("http://localhost:{}", port)
 }
