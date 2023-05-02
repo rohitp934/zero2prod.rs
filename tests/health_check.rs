@@ -1,4 +1,12 @@
-//! tests/health_check.rs
+//! tests/health_check.response
+
+fn spawn_app() -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("failed to bind random port");
+    let port = listener.local_addr().expect("failed to get port").port();
+    let server = zero2prod::run(listener).expect("failed to bind address");
+    tokio::spawn(server);
+    format!("http://localhost:{}", port)
+}
 
 #[tokio::test]
 async fn health_check_test() {
@@ -18,10 +26,49 @@ async fn health_check_test() {
     assert_eq!(Some(0), response.content_length());
 }
 
-fn spawn_app() -> String {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("failed to bind random port");
-    let port = listener.local_addr().expect("failed to get port").port();
-    let server = zero2prod::run(listener).expect("failed to bind address");
-    tokio::spawn(server);
-    format!("http://localhost:{}", port)
+#[tokio::test]
+async fn subscribe_returns_200_for_valid_form() {
+    let url = spawn_app();
+    let client = reqwest::Client::new();
+
+    let request_body = "name=scooby%20doo&email=lingardium_espinoza%40gmail.com";
+    let response = client
+        .post(format!("{}/subscriptions", &url))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(request_body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    assert_eq!(200, response.status().as_u16());
+}
+
+#[tokio::test]
+async fn subscribe_returns_400_for_invalid_form() {
+    let url = spawn_app();
+    let client = reqwest::Client::new();
+
+    let test_cases = [
+        ("name=scooby%20doo", "missing the email"),
+        ("email=lingardium_espinoza%40gmail.com", "missing the name"),
+        ("", "missing both name and email"),
+    ];
+
+    for (request_body, error_msg) in test_cases {
+        let response = client
+            .post(format!("{}/subscriptions", &url))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(request_body)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        // Verify that response status is 400.
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The api did not fail with a 400 Bad Request when the payload was {}",
+            error_msg
+        );
+    }
 }
