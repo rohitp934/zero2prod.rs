@@ -12,7 +12,7 @@ pub struct DatabaseSettings {
     pub password: String,
     pub host: String,
     pub port: u16,
-    pub db_name: String
+    pub database_name: String
 }
 
 impl DatabaseSettings {
@@ -22,7 +22,7 @@ impl DatabaseSettings {
             self.password,
             self.host,
             self.port,
-            self.db_name
+            self.database_name
         )
     }
 }
