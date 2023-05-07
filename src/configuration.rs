@@ -3,7 +3,7 @@
 #[derive(serde::Deserialize, Debug)]
 pub struct Settings {
     pub database: DatabaseSettings,
-    pub port: u16
+    pub port: u16,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -12,21 +12,17 @@ pub struct DatabaseSettings {
     pub password: String,
     pub host: String,
     pub port: u16,
-    pub database_name: String
+    pub database_name: String,
 }
 
 impl DatabaseSettings {
     pub fn connection_string(&self) -> String {
-        format!("postgres://{}:{}@{}:{}/{}",
-            self.username,
-            self.password,
-            self.host,
-            self.port,
-            self.database_name
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.database_name
         )
     }
 }
-
 
 pub fn get_config() -> Result<Settings, config::ConfigError> {
     let settings = config::Config::builder()
